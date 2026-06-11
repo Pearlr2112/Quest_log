@@ -1,0 +1,664 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Quest Log RPG To-Do API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: character
+    description: Character management
+  - name: tasks
+    description: Task (quest) management
+  - name: daily
+    description: Daily quest management
+  - name: bosses
+    description: Boss battle management
+  - name: inventory
+    description: Inventory and shop
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /character:
+    get:
+      operationId: getCharacter
+      tags: [character]
+      summary: Get the player character
+      responses:
+        "200":
+          description: Character data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+    post:
+      operationId: createCharacter
+      tags: [character]
+      summary: Create or reset character
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CharacterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Character"
+
+  /character/stats:
+    get:
+      operationId: getCharacterStats
+      tags: [character]
+      summary: Get character summary stats (total tasks, XP earned, streak)
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CharacterStats"
+
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List all tasks
+      parameters:
+        - name: completed
+          in: query
+          schema:
+            type: ["boolean", "null"]
+        - name: priority
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a new task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    get:
+      operationId: getTask
+      tags: [tasks]
+      summary: Get a task by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "404":
+          description: Not found
+    put:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete a task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /tasks/{id}/complete:
+    post:
+      operationId: completeTask
+      tags: [tasks]
+      summary: Complete a task and award XP
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Completion result with XP gained and level up info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskCompletion"
+
+  /daily-quests:
+    get:
+      operationId: listDailyQuests
+      tags: [daily]
+      summary: List today's daily quests
+      responses:
+        "200":
+          description: Daily quests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyQuest"
+
+  /daily-quests/{id}/complete:
+    post:
+      operationId: completeDailyQuest
+      tags: [daily]
+      summary: Complete a daily quest
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Completion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskCompletion"
+
+  /bosses:
+    get:
+      operationId: listBosses
+      tags: [bosses]
+      summary: List all boss battles
+      responses:
+        "200":
+          description: Boss battles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Boss"
+    post:
+      operationId: createBoss
+      tags: [bosses]
+      summary: Create a new boss battle (large project)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BossInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boss"
+
+  /bosses/{id}:
+    get:
+      operationId: getBoss
+      tags: [bosses]
+      summary: Get a boss by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Boss
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boss"
+    delete:
+      operationId: deleteBoss
+      tags: [bosses]
+      summary: Delete a boss
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /bosses/{id}/damage:
+    post:
+      operationId: damageBoss
+      tags: [bosses]
+      summary: Deal damage to a boss (by completing a sub-task)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DamageInput"
+      responses:
+        "200":
+          description: Updated boss state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boss"
+
+  /inventory:
+    get:
+      operationId: listInventory
+      tags: [inventory]
+      summary: Get the player's unlocked inventory items
+      responses:
+        "200":
+          description: Inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+
+  /shop:
+    get:
+      operationId: listShop
+      tags: [inventory]
+      summary: Get available shop items
+      responses:
+        "200":
+          description: Shop items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShopItem"
+
+  /shop/{id}/purchase:
+    post:
+      operationId: purchaseItem
+      tags: [inventory]
+      summary: Purchase an item from the shop
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Purchased item added to inventory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Character:
+      type: object
+      required: [id, name, level, xp, xp_to_next_level, strength, endurance, focus, agility, luck, class_name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        class_name:
+          type: string
+        level:
+          type: integer
+        xp:
+          type: integer
+        xp_to_next_level:
+          type: integer
+        strength:
+          type: integer
+        endurance:
+          type: integer
+        focus:
+          type: integer
+        agility:
+          type: integer
+        luck:
+          type: integer
+        avatar_emoji:
+          type: string
+        equipped_outfit:
+          type: ["string", "null"]
+        equipped_pet:
+          type: ["string", "null"]
+        equipped_weapon:
+          type: ["string", "null"]
+        total_tasks_completed:
+          type: integer
+        total_xp_earned:
+          type: integer
+        streak_days:
+          type: integer
+
+    CharacterInput:
+      type: object
+      required: [name, class_name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        class_name:
+          type: string
+
+    CharacterStats:
+      type: object
+      required: [total_tasks_completed, total_xp_earned, streak_days, tasks_by_priority, bosses_defeated, daily_quests_completed]
+      properties:
+        total_tasks_completed:
+          type: integer
+        total_xp_earned:
+          type: integer
+        streak_days:
+          type: integer
+        tasks_by_priority:
+          type: object
+          properties:
+            low:
+              type: integer
+            medium:
+              type: integer
+            high:
+              type: integer
+            legendary:
+              type: integer
+        bosses_defeated:
+          type: integer
+        daily_quests_completed:
+          type: integer
+
+    Task:
+      type: object
+      required: [id, title, priority, xp_reward, completed, created_at]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        priority:
+          type: string
+          enum: [low, medium, high, legendary]
+        xp_reward:
+          type: integer
+        stat_bonus_type:
+          type: ["string", "null"]
+        stat_bonus_value:
+          type: ["integer", "null"]
+        due_date:
+          type: ["string", "null"]
+        completed:
+          type: boolean
+        completed_at:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        boss_id:
+          type: ["integer", "null"]
+        created_at:
+          type: string
+
+    TaskInput:
+      type: object
+      required: [title, priority]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, legendary]
+        due_date:
+          type: string
+        category:
+          type: string
+        stat_bonus_type:
+          type: string
+        stat_bonus_value:
+          type: integer
+        boss_id:
+          type: integer
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, legendary]
+        due_date:
+          type: string
+        category:
+          type: string
+        completed:
+          type: boolean
+
+    TaskCompletion:
+      type: object
+      required: [xp_gained, leveled_up, character, task_or_quest]
+      properties:
+        xp_gained:
+          type: integer
+        leveled_up:
+          type: boolean
+        new_level:
+          type: ["integer", "null"]
+        stat_bonus_type:
+          type: ["string", "null"]
+        stat_bonus_value:
+          type: ["integer", "null"]
+        character:
+          $ref: "#/components/schemas/Character"
+        task_or_quest:
+          type: object
+
+    DailyQuest:
+      type: object
+      required: [id, title, xp_reward, completed, difficulty]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        xp_reward:
+          type: integer
+        completed:
+          type: boolean
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        icon:
+          type: string
+
+    Boss:
+      type: object
+      required: [id, title, max_hp, current_hp, xp_reward, defeated, difficulty, created_at]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        max_hp:
+          type: integer
+        current_hp:
+          type: integer
+        xp_reward:
+          type: integer
+        defeated:
+          type: boolean
+        difficulty:
+          type: string
+          enum: [normal, hard, legendary]
+        emoji:
+          type: string
+        created_at:
+          type: string
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+
+    BossInput:
+      type: object
+      required: [title, difficulty]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [normal, hard, legendary]
+
+    DamageInput:
+      type: object
+      required: [damage]
+      properties:
+        damage:
+          type: integer
+        task_title:
+          type: string
+
+    InventoryItem:
+      type: object
+      required: [id, item_type, name, rarity]
+      properties:
+        id:
+          type: integer
+        item_type:
+          type: string
+          enum: [outfit, pet, weapon]
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        rarity:
+          type: string
+          enum: [common, rare, epic, legendary]
+        emoji:
+          type: string
+        equipped:
+          type: boolean
+        acquired_at:
+          type: string
+
+    ShopItem:
+      type: object
+      required: [id, item_type, name, xp_cost, rarity]
+      properties:
+        id:
+          type: integer
+        item_type:
+          type: string
+          enum: [outfit, pet, weapon]
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        rarity:
+          type: string
+          enum: [common, rare, epic, legendary]
+        emoji:
+          type: string
+        xp_cost:
+          type: integer
+        unlocked:
+          type: boolean
